@@ -1,0 +1,269 @@
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>HTML5 File API to Read CSV Data</title>
+    <style>
+            table {
+                border-collapse: collapse;
+                border: 3px black solid;
+                font: 12px sans-serif;
+            }
+
+            td {
+                border: 1px black solid;
+                padding: 5px;
+            }
+        
+            #loading {
+                width: 100%;
+                background-color: grey;
+            }
+            #bar {
+                width: 1%;
+                height: 30px;
+                background-color: skyblue;
+            }
+            #dropdown {
+                display: inline-block;
+                margin-right: 10px;
+            }
+            #reverse {
+                display: inline-block
+            }
+    </style>
+</head>
+<body >
+  <div id="contain">
+    <form class="form-horizontal well">
+      <legend>
+        <h3>
+          <div id="title">HTML5 File API</div>
+        </h3>
+      </legend>
+      <fieldset>
+          <label for="csvFileInput"> <strong>CSV File:</strong>
+          </label>
+          <input type="file" id="csvFileInput" onchange="handleFiles(this.files)"
+          accept=".csv">
+        </fieldset>
+        </form>
+    </div>
+    <div id="loading"> 
+        <div id="bar"> 
+        
+        </div>
+    </div>
+    <br>
+    <select id = "dropdown" onChange = "callData()">
+          <option value = "">Select an Option</option>
+         
+     </select>
+    <br>
+    <button type="button" id="reverse" onclick="reverseFunc()">Reverse Table</button>
+    <br>
+    <div id="output">
+    </div>
+  </div>
+    
+  <br>
+  <br>
+  <footer>
+    <center>
+    
+    </center>
+  </footer>
+    
+    
+    <script>
+        //TODO: SORT NUMERICALLY AND CREATE GRAPHS
+        
+        //Progress Bar
+        //Search Bar/filter
+        //Graphs
+        var csvInfo = []
+        var data = []
+        var header = []
+        var reverseCount = 0;
+        //var width = 0;
+        
+        var dropDown = document.getElementById("dropdown")
+        var loadingBar = document.getElementById("loading")
+        var bar = document.getElementById("bar")
+        var reverseButton = document.getElementById("reverse")
+        hide(dropDown);
+        hide(reverseButton);
+        hide(loadingBar);
+        hide(bar);
+        
+        function handleFiles(files) {
+            // Check for the various File API support.
+            if (window.FileReader) {
+                var reader = new FileReader();
+                // Handle errors load
+                reader.onload = loadHandler;
+                reader.onerror = errorHandler;
+                // Read file into memory as UTF-8      
+                reader.readAsText(files[0]);
+            } else {
+                alert('FileReader are not supported in this browser.');
+            }
+        }
+        //Loadhandler and error
+        function loadHandler(event) {
+            var csv = event.target.result;
+            csvInfo = []
+            data = []
+            header = []
+            processData(csv);            
+        }
+        
+        function errorHandler(evt) {
+            if(evt.target.error.name == "NotReadableError") {
+                alert("Cannot read file !");
+            }
+        }
+        
+        
+        function processData(csv) {//main area to program
+            var allTextLines = csv.split(/\r/);
+            console.log(allTextLines)
+            var lines = [];
+            while (allTextLines.length) {
+                lines.push(allTextLines.shift().split('\n'));
+            }
+            console.log(lines);
+            csvInfo = lines;
+            show(loadingBar)
+            show(bar)
+            var number = 0;
+            for (var i = 0; i<csvInfo.length; i++) {
+                var spotter = csvInfo[i].toString().split(",");
+                //console.log(i)
+                //console.log(csvInfo.length)
+                console.log(spotter)
+                data.push(spotter)
+                move((i/csvInfo.length) * 100)
+            }
+            move(100)
+            header = csvInfo[0].toString().split(",");
+            console.log(header)
+        }
+        
+        function displayToScreen(){
+             var myDisplay = "<table>";
+             document.getElementById("output").innerHTML = ""
+             for (var i = 0; i<data.length; i++) {
+                 myDisplay += "<tr>";
+                 for (var o = 0; o < data[i].length; o++) {
+                     myDisplay += "<td>" + data[i][o] + "</td>";   
+                 }
+             }
+             document.getElementById("output").innerHTML =   myDisplay;
+             var dropDown = document.getElementById("dropdown");
+             var myIndex = dropDown.selectedIndex
+             dropDown.innerHTML = ""
+             show(dropDown)
+             show(reverseButton)
+             for (var i =0; i< header.length; i++) {
+                 var opt = document.createElement("option");
+                 opt.value = header[i];
+                 opt.textContent = header[i];
+                 dropDown.appendChild(opt);
+             }
+             //dropDown.selectedIndex = myIndex
+        }
+        
+        
+        function callData(){
+            reverseCount = 0;
+            sort(false)
+           //displayToScreen();
+        }
+        
+        function reverseFunc() {
+            reverseCount += 1;
+            if (reverseCount % 2 == 0) {
+                sort(false)  
+            } else {
+                sort(true)
+            }
+            
+        }
+        
+        function sort(reverse) {
+            var selectedIndex = document.getElementById("dropdown").selectedIndex
+            for (var i=0; i < data.length; i++) {
+                var theArr = data[i]
+                arraymove(theArr, selectedIndex, 0)
+            }
+            arraymove(header, selectedIndex, 0)
+            var sortArr = []
+            for (var i=1; i < data.length; i++) {
+                sortArr.push(data[i][0])
+            }
+            console.log(sortArr)
+            console.log(sortArr.sort())
+            if (reverse) {
+                sortArr.reverse();
+            }
+            var newData = []
+            for (var sort=0; sort < sortArr.length; sort++) {
+                var target = sortArr[sort]
+                for (var arrI = 1; arrI < data.length; arrI++) {
+                    if (data[arrI][0] == target) {
+                        newData.push(data[arrI])
+                        data.splice(arrI, 1)
+                        console.log(newData)
+                        break
+                    }
+                }
+            }
+            for (var obj=0; obj < newData.length; obj++) {
+                data.push(newData[obj])
+            }
+            displayToScreen();
+        }
+        
+        function move(value) {
+            var elem = document.getElementById("bar"); 
+            var width = 10;
+            var id = setInterval(frame, 10);
+            function frame() {
+                if (width >= value) {
+                    clearInterval(id);
+                    if (value == 100) {
+                        displayToScreen();
+                        hide(loadingBar)
+                        hide(bar)
+                    }
+                } else {
+                    width++; 
+                    elem.style.width = width + '%'; 
+                    //elem.innerHTML = width * 1 + '%';
+                }
+            }
+        }
+        
+        function hide(element) {
+            element.style.display = 'none';
+        }
+        
+        function show(element) {
+            element.style.display = 'block';
+        }
+        
+        function arraymove(arr, fromIndex, toIndex) {
+            var element = arr[fromIndex];
+            arr.splice(fromIndex, 1);
+            arr.splice(toIndex, 0, element);
+        }
+      
+    </script>
+
+  <!-- Le javascript
+    ================================================== -->
+  <!-- Placed at the end of the document so the pages load faster 
+  <script type="text/javascript" src="js/read-csv.js"></script>
+-->
+</body>
+</html>
